@@ -26,7 +26,7 @@ def EventuallyConst (f : α → β) (l : Filter α) : Prop :=
 lemma eventuallyConst_iff_tendsto : EventuallyConst f l ↔ ∃ x, Tendsto f l (pure x) := by
   simp_rw [EventuallyConst, EventuallyEq, tendsto_pure]
 
-alias eventuallyConst_iff_tendsto ↔ EventuallyConst.exists_tendsto _
+alias ⟨EventuallyConst.exists_tendsto, _⟩ := eventuallyConst_iff_tendsto
 
 theorem eventuallyConst_pred' {p : α → Prop} :
     EventuallyConst p l ↔ (p =ᶠ[l] fun _ ↦ False) ∨ (p =ᶠ[l] fun _ ↦ True) := by

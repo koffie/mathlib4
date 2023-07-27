@@ -109,7 +109,7 @@ theorem finite_iUnion_left_iff {ι : Type _} {I : Set ι} (hI : I.Finite) {s : �
   rw [biUnion_insert, ball_insert_iff, union_left_iff, hI]
 #align is_metric_separated.finite_Union_left_iff IsMetricSeparated.finite_iUnion_left_iff
 
-alias finite_iUnion_left_iff ↔ _ finite_iUnion_left
+alias ⟨_, finite_iUnion_left⟩ := finite_iUnion_left_iff
 #align is_metric_separated.finite_Union_left IsMetricSeparated.finite_iUnion_left
 
 theorem finite_iUnion_right_iff {ι : Type _} {I : Set ι} (hI : I.Finite) {s : Set X}
@@ -123,7 +123,7 @@ theorem finset_iUnion_left_iff {ι : Type _} {I : Finset ι} {s : ι → Set X} 
   finite_iUnion_left_iff I.finite_toSet
 #align is_metric_separated.finset_Union_left_iff IsMetricSeparated.finset_iUnion_left_iff
 
-alias finset_iUnion_left_iff ↔ _ finset_iUnion_left
+alias ⟨_, finset_iUnion_left⟩ := finset_iUnion_left_iff
 #align is_metric_separated.finset_Union_left IsMetricSeparated.finset_iUnion_left
 
 @[simp]
@@ -132,7 +132,7 @@ theorem finset_iUnion_right_iff {ι : Type _} {I : Finset ι} {s : Set X} {t : �
   finite_iUnion_right_iff I.finite_toSet
 #align is_metric_separated.finset_Union_right_iff IsMetricSeparated.finset_iUnion_right_iff
 
-alias finset_iUnion_right_iff ↔ _ finset_iUnion_right
+alias ⟨_, finset_iUnion_right⟩ := finset_iUnion_right_iff
 #align is_metric_separated.finset_Union_right IsMetricSeparated.finset_iUnion_right
 
 end IsMetricSeparated
