@@ -210,5 +210,5 @@ elab_rules : tactic |
   replaceMainGoal [min.goal]
   let rules ← min.history.toList.mapM fun ⟨n, s⟩ => do pure (← mkConstWithFreshMVarLevels n, s)
   let type? := if min.rfl? = some true then none else some (← min.goal.getType)
-  addRewritesSuggestion tk rules
+  addRewriteSuggestion tk rules
     type? (origSpan? := ← getRef)
