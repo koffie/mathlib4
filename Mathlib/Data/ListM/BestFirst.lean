@@ -90,9 +90,10 @@ instance [Ord ω] [Ord α] : Ord (BestFirstNode prio ε) where
       (compareOn BestFirstNode.estimate)
       (compareOn BestFirstNode.key)
 
-variable (prio ε m β) [Ord ω] [Ord α] in
 set_option linter.unusedVariables false in
+variable (prio ε m β) [Ord ω] [Ord α] in
 /-- A queue of `ListM m β`s, lazily prioritized by lower bounds. -/
+@[nolint unusedArguments]
 def BestFirstQueue (maxSize : Option Nat) := RBMap (BestFirstNode prio ε) (ListM m β) compare
 
 variable [Ord ω] [Ord α] {maxSize : Option Nat}
