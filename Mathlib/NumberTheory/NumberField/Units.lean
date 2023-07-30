@@ -460,4 +460,44 @@ theorem unit_lattice.rank : finrank ℤ (unit_lattice K) = rank K := by
 
 end dirichlet
 
+open BigOperators
+
+variable [NumberField K]
+
+#synth CommMonoid (𝓞 K)ˣ
+
+#synth AddCommMonoid (Additive (𝓞 K)ˣ)
+
+-- instance : Subgroup.Normal (torsion K) := sorry
+
+#synth CommGroup ((𝓞 K)ˣ ⧸ (torsion K))
+
+-- #synth AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K)))
+
+instance : AddCommGroup (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := Additive.addCommGroup
+
+set_option synthInstance.maxHeartbeats 50000 in 
+#synth AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K)))
+
+instance : AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K))) :=
+
+instance : Module ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := sorry
+
+def Basis_additive : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by sorry
+
+def fund_system : (Fin (rank K)) → (𝓞 K)ˣ := fun i => Quot.out (Basis_additive K i)
+
+example {G : Type _} [AddCommGroup G] {H : AddSubgroup G} (g : G) :
+    ∃ h : H, h = (g : G) + - Quot.out (g : G ⧸ H) := by
+  exact?
+
+example (x : (𝓞 K)ˣ) :
+    ∃ (ζ : torsion K) (e : Fin (rank K) → ℤ), x = ζ * ∏ i, (fund_system K i) ^ (e i) := by
+  let y : (𝓞 K)ˣ ⧸ (torsion K) := x
+  let e : _ → ℤ := (Basis_additive K).repr y
+  let ζ := x * (∏ i, (fund_system K i) ^ (e i))⁻¹
+
+  sorry
+
+
 end NumberField.Units
