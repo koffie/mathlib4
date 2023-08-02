@@ -61,40 +61,22 @@ namespace NumberField.Units
 
 section coe
 
-/-- The `MonoidHom` from the group of units `(𝓞 K)ˣ` to the field `K`. -/
-def coe_to_field : (𝓞 K)ˣ →* K := (Units.coeHom K).comp (map (algebraMap (𝓞 K) K))
+theorem coe_injective : Function.Injective ((↑) : (𝓞 K)ˣ → K) :=
+  fun _ _ h => by rwa [SetLike.coe_eq_coe, Units.eq_iff] at h
 
 variable {K}
 
-/-- The coercion of `x : (𝓞 K)ˣ` into `K`. -/
-@[coe] def to_field (x : (𝓞 K)ˣ) : K := coe_to_field K x
+ theorem coe_pow (x : (𝓞 K)ˣ) (n : ℕ) : (x ^ n : K) = (x : K) ^ n := by
+   rw [← SubmonoidClass.coe_pow, ← val_pow_eq_pow_val]
 
-variable (K)
+ theorem coe_zpow (x : (𝓞 K)ˣ) (n : ℤ) : (x ^ n : K) = (x : K) ^ n := by
+   change ((Units.coeHom K).comp (map (algebraMap (𝓞 K) K))) (x ^ n) = _
+   exact map_zpow _ x n
 
-theorem coe_to_field_injective : Function.Injective (coe_to_field K) :=
-  fun _ _ h => Units.eq_iff.mp (SetCoe.ext h)
+ theorem coe_one : ((1 : (𝓞 K)ˣ) : K) = (1 : K) := rfl
 
-/-- There is a natural coercion from `(𝓞 K)ˣ` to `(𝓞 K)` and then from `(𝓞 K)` to `K` but it is
-useful to also have a direct one from `(𝓞 K)ˣ` to `K`. -/
-instance : Coe (𝓞 K)ˣ K := ⟨to_field⟩
-
-@[ext]
-theorem ext {x y : (𝓞 K)ˣ} (h : (x : K) = y) : x = y := (coe_to_field_injective K).eq_iff.mp h
-
-@[simp]
-theorem map_mul (x y : (𝓞 K)ˣ) : ((x * y : (𝓞 K)ˣ) : K) = (x : K) * (y : K) :=
-  _root_.map_mul (coe_to_field K) x y
-
-@[simp]
-theorem map_pow (x : (𝓞 K)ˣ) (n : ℕ) : (x ^ n : K) = (x : K) ^ n :=
-  _root_.map_pow (coe_to_field K) x n
-
-@[simp]
-theorem map_one : ((1 : (𝓞 K)ˣ) : K) = 1 := rfl
-
-@[simp]
-theorem ne_zero (x : (𝓞 K)ˣ) : (x : K) ≠ 0 :=
-  Subtype.coe_injective.ne_iff.mpr (_root_.Units.ne_zero x)
+ theorem coe_ne_zero (x : (𝓞 K)ˣ) : (x : K) ≠ 0 :=
+   Subtype.coe_injective.ne_iff.mpr (_root_.Units.ne_zero x)
 
 end coe
 
@@ -110,16 +92,16 @@ theorem mem_torsion {x : (𝓞 K)ˣ} [NumberField K] :
   rw [eq_iff_eq (x : K) 1, torsion, CommGroup.mem_torsion, isOfFinOrder_iff_pow_eq_one]
   refine ⟨fun ⟨n, h_pos, h_eq⟩ φ => ?_, fun h => ?_⟩
   · refine norm_map_one_of_pow_eq_one φ.toMonoidHom (k := ⟨n, h_pos⟩) ?_
-    rw [PNat.mk_coe, ← map_pow, h_eq, map_one]
+    rw [PNat.mk_coe, ← coe_pow, h_eq, coe_one]
   · obtain ⟨n, hn, hx⟩ := Embeddings.pow_eq_one_of_norm_eq_one K ℂ x.val.prop h
-    exact ⟨n, hn, by ext; rwa [map_pow, map_one]⟩
+    exact ⟨n, hn, by ext; rwa [coe_pow, coe_one]⟩
 
 instance : Nonempty (torsion K) := ⟨1⟩
 
 /-- The torsion subgroup is finite. -/
 instance [NumberField K] : Fintype (torsion K) := by
   refine @Fintype.ofFinite _ (Set.finite_coe_iff.mpr ?_)
-  refine Set.Finite.of_finite_image ?_ ((coe_to_field_injective K).injOn _)
+  refine Set.Finite.of_finite_image ?_ ((coe_injective K).injOn _)
   refine (Embeddings.finite_of_norm_le K ℂ 1).subset
     (fun a ⟨u, ⟨h_tors, h_ua⟩⟩ => ⟨?_, fun φ => ?_⟩)
   · rw [← h_ua]
@@ -189,8 +171,7 @@ def log_embedding : Additive ((𝓞 K)ˣ) →+ ({w : InfinitePlace K // w ≠ w�
   map_zero' := by simp; rfl
   map_add' := by
     intro _ _
-    simp only [ne_eq, toMul_add, map_mul, _root_.map_mul, map_eq_zero, ne_zero, not_false_eq_true,
-      Real.log_mul, mul_add]
+    simp [ne_eq, toMul_add, map_mul, map_eq_zero, coe_ne_zero, Real.log_mul, mul_add]
     rfl }
 
 variable {K}
@@ -211,14 +192,14 @@ theorem log_embedding_sum_component (x : (𝓞 K)ˣ) :
     · refine (Finset.sum_subtype _ (fun w => ?_) (fun w => (mult w) * (Real.log (w (x : K))))).symm
       exact ⟨Finset.ne_of_mem_erase, fun h => Finset.mem_erase_of_ne_of_mem h (Finset.mem_univ w)⟩
     · norm_num
-  · exact fun w _ => pow_ne_zero _ (AbsoluteValue.ne_zero _ (ne_zero K x))
+  · exact fun w _ => pow_ne_zero _ (AbsoluteValue.ne_zero _ (coe_ne_zero x))
 
 theorem mult_log_place_eq_zero {x : (𝓞 K)ˣ} {w : InfinitePlace K} :
     mult w * Real.log (w x) = 0 ↔ w x = 1 := by
   rw [mul_eq_zero, or_iff_right, Real.log_eq_zero, or_iff_right, or_iff_left]
   · have : 0 ≤ w x := map_nonneg _ _
     linarith
-  · simp only [ne_eq, map_eq_zero, ne_zero K x]
+  · simp only [ne_eq, map_eq_zero, coe_ne_zero x]
   · refine (ne_of_gt ?_)
     rw [mult]; split_ifs <;> norm_num
 
@@ -285,10 +266,10 @@ theorem unit_lattice_inter_ball_finite (r : ℝ) :
       refine (Set.Finite.image (log_embedding K) this).subset ?_
       rintro _ ⟨⟨x, ⟨_, rfl⟩⟩, hx⟩
       refine ⟨x, ⟨x.val.prop, (le_iff_le _ _).mp (fun w => (Real.log_le_iff_le_exp ?_).mp ?_)⟩, rfl⟩
-      · exact pos_iff.mpr (ne_zero K x)
+      · exact pos_iff.mpr (coe_ne_zero x)
       · rw [mem_closedBall_zero_iff] at hx
         exact (le_abs_self _).trans (log_le_of_log_embedding_le hr hx w)
-    refine Set.Finite.of_finite_image ?_ ((coe_to_field_injective K).injOn _)
+    refine Set.Finite.of_finite_image ?_ ((coe_injective K).injOn _)
     refine (Embeddings.finite_of_norm_le K ℂ
         (Real.exp ((Fintype.card (InfinitePlace K)) * r))).subset ?_
     rintro _ ⟨x, ⟨⟨h_int, h_le⟩, rfl⟩⟩
@@ -301,9 +282,9 @@ section span_top
 -- It follows then from a determinant computation (using `Matrix.det_ne_zero_of_neg`) that the
 -- image by `log_embedding` of these units is a `ℝ`-linearly independent family.
 -- The unit `u_w₁` is obtained by construction a sequence `seq n` of nonzero algebraic integers
--- that is strictly decreasing at infinite places distinct from `w₁` and of bounded norms. Since
--- there are finitely many ideals of bounded norms, there exists two terms in the sequence defining
--- the same ideal and their quotient is the unit `u_w₁` (see `exists_unit`).
+-- that is strictly decreasing at infinite places distinct from `w₁` and of norm `≤ B`. Since
+-- there are finitely many ideals of norm `≤ B`, there exists two terms in the sequence defining
+-- the same ideal and their quotient is the desired unit `u_w₁` (see `exists_unit`).
 
 open NumberField.mixedEmbedding NNReal
 
@@ -327,7 +308,7 @@ theorem seq.next {x : 𝓞 K} (hx : x ≠ 0) :
       · refine Finset.prod_le_prod ?_ ?_
         exact fun _ _ => pow_nonneg (by positivity) _
         exact fun w _ => pow_le_pow_of_le_left (by positivity) (le_of_lt (h_yle w)) (mult w)
-      · simp_rw [← coe_pow, ← NNReal.coe_prod]
+      · simp_rw [← NNReal.coe_pow, ← NNReal.coe_prod]
         exact le_of_eq (congrArg toReal h_gprod)
     · refine div_lt_self ?_ (by norm_num)
       simp only [pos_iff, ne_eq, ZeroMemClass.coe_eq_zero, hx]
@@ -405,7 +386,6 @@ theorem exists_unit (w₁ : InfinitePlace K ) :
         _ < 1                                               := ?_
       · rw [← congrArg ((↑) : (𝓞 K) → K) hu.choose_spec, mul_comm, Submonoid.coe_mul, ← mul_assoc,
           inv_mul_cancel (seq.ne_zero K w₁ hB n), one_mul]
-        rfl
       · rw [map_inv₀, mul_inv_lt_iff (pos_iff.mpr (seq.ne_zero K w₁ hB n)), mul_one]
         exact seq.antitone K w₁ hB hnm w hw
   refine Set.Finite.exists_lt_map_eq_of_forall_mem
@@ -458,42 +438,116 @@ theorem rank_space :
 theorem unit_lattice_moduleFree : Module.Free ℤ (unit_lattice K) :=
 Zlattice.module_free ℝ ((unit_lattice_inter_ball_finite K)) (unit_lattice_span_eq_top K)
 
-theorem unit_lattice.rank : finrank ℤ (unit_lattice K) = rank K := by
+theorem unit_lattice_moduleFinite : Module.Finite ℤ (unit_lattice K) :=
+Zlattice.module_finite ℝ ((unit_lattice_inter_ball_finite K)) (unit_lattice_span_eq_top K)
+
+theorem unit_lattice_rank : finrank ℤ (unit_lattice K) = rank K := by
   rw [← rank_space]
   exact Zlattice.rank ℝ ((unit_lattice_inter_ball_finite K)) (unit_lattice_span_eq_top K)
 
+def unit_lattice_basis : Basis (Fin (rank K)) ℤ (unit_lattice K) := by
+  have := unit_lattice_moduleFree K
+  have := unit_lattice_moduleFinite K
+  refine Basis.reindex (Module.Free.chooseBasis ℤ (unit_lattice K)) (Fintype.equivOfCardEq ?_)
+  rw [← FiniteDimensional.finrank_eq_card_chooseBasisIndex, unit_lattice_rank, Fintype.card_fin]
+
 end dirichlet
+
+section toMul
+
+theorem toMul_pow {α : Type _} (n : ℕ) [Monoid α] (a : Additive α) :
+    Additive.toMul (n • a) = (Additive.toMul a) ^ n := rfl
+
+theorem toMul_zpow {α : Type _} (n : ℤ) [Group α] (a : Additive α) :
+    Additive.toMul (n • a) = (Additive.toMul a) ^ n := rfl
+
+end toMul
 
 open BigOperators
 
 variable [NumberField K]
 
--- instance : CommMonoid ((𝓞 K)ˣ ⧸ (torsion K)) := CommGroup.toCommMonoid
-
--- instance : AddCommGroup (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := Additive.addCommGroup
-
-set_option maxHeartbeats 1000000 in
 set_option synthInstance.maxHeartbeats 100000 in
-def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) :=  sorry
+instance : AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := inferInstance
+
+set_option synthInstance.maxHeartbeats 100000 in
+instance : AddCommGroup (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := inferInstance
+
+set_option synthInstance.maxHeartbeats 100000 in
+instance : Module ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := inferInstance
+
+set_option synthInstance.maxHeartbeats 100000 in
+def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by
+  refine (dirichlet.unit_lattice_basis K).map (AddEquiv.toIntLinearEquiv ?_)
+  rw [dirichlet.unit_lattice, ← AddMonoidHom.range_eq_map (dirichlet.log_embedding K)]
+  refine (QuotientAddGroup.quotientKerEquivRange (dirichlet.log_embedding K)).symm.trans ?_
+  sorry
 
 def fund_system₀ : Fin (rank K) → (𝓞 K)ˣ ⧸ (torsion K) :=
   fun i => Additive.toMul (basis_mod_torsion K i)
 
 def fund_system : Fin (rank K) → (𝓞 K)ˣ := fun i => Quot.out (fund_system₀ K i)
 
-
-example {G ι : Type _} [CommGroup G] [Fintype ι] (H : Subgroup G) [Subgroup.Normal H]
-  (f : ι → G) :
-  QuotientGroup.mk' H (∏ i, f i) = ∏ i, (QuotientGroup.mk' H (f i)) := by
-exact map_prod (QuotientGroup.mk' H) (fun x ↦ f x) Finset.univ
-
-
-set_option synthInstance.maxHeartbeats 50000 in
 set_option maxHeartbeats 1000000 in
-theorem aux (x : (𝓞 K)ˣ) :
+set_option synthInstance.maxHeartbeats 100000 in
+-- set_option synth.maxHeartbeats 100000 in
+theorem aux0 (x : (𝓞 K)ˣ) :
     x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
       ∈ torsion K := by
   rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+  change QuotientGroup.mk' (torsion K) x * (QuotientGroup.mk' (torsion K) _)⁻¹  = 1
+  rw [map_prod (QuotientGroup.mk' (torsion K))]
+  simp_rw [map_zpow (QuotientGroup.mk' (torsion K))]
+  have : ∀ i, (QuotientGroup.mk' (torsion K)) (fund_system K i) = fund_system₀ K i := by
+    intro i
+    rw [fund_system]
+    exact QuotientGroup.out_eq' _
+  simp_rw [this]
+  have := (basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)
+  rw [show (QuotientGroup.mk' (torsion K)) x = Additive.toMul (Additive.ofMul ↑x) by rfl]
+  conv_lhs =>
+    congr
+    rw [← this]
+  simp_rw [fund_system₀]
+  simp_rw [toMul_sum]
+  rw [_root_.mul_inv_eq_iff_eq_mul]
+  simp_rw [one_mul]
+  rfl
+
+set_option maxHeartbeats 1000000 in
+theorem aux1 (x ζ : (𝓞 K)ˣ) (hζ : ζ ∈ torsion K) (f : Fin (rank K) → ℤ)
+    (h : x = ζ * ∏ i, (fund_system K i) ^ (f i)) :
+    f = (basis_mod_torsion K).repr (Additive.ofMul ↑x) := by
+  rw [← (basis_mod_torsion K).repr_sum_self f]
+  have t1 := congrArg ((↑) : (𝓞 K)ˣ → (𝓞 K)ˣ ⧸ (torsion K)) h
+  rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr hζ, one_mul] at t1
+  rw [show ↑(∏ i, fund_system K i ^ f i) =
+    QuotientGroup.mk' (torsion K) (∏ i, fund_system K i ^ f i) by rfl] at t1
+  rw [map_prod (QuotientGroup.mk' (torsion K))] at t1
+  have t2 := congrArg Additive.ofMul t1
+  rw [ofMul_prod] at t2
+  
+
+#exit
+
+
+
+  have := ofMul_prod Finset.univ (fun i => (fund_system K i) ^ (f i))
+
+  rw [map_sum]
+  simp_rw [map_smul]
+
+
+--  simp only [map_smul, Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, FunLike.coe_fn_eq]
+
+
+
+-- For future reference to prove the existence of ζ
+-- QuotientGroup.mk_out'_eq_mul
+
+
+#exit
+
   dsimp
   simp_rw [map_prod]
   sorry
