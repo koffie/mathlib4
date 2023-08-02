@@ -181,6 +181,8 @@ variable {K}
 /-- The distinguished infinite place. -/
 def w₀ : InfinitePlace K := (inferInstance : Nonempty (InfinitePlace K)).some
 
+variable (K)
+
 /-- The logarithmic embedding of the units (seen as an `Additive` group). -/
 def log_embedding : Additive ((𝓞 K)ˣ) →+ ({w : InfinitePlace K // w ≠ w₀} → ℝ) :=
 { toFun := fun x w => mult w.val * Real.log (w.val (Additive.toMul x))
@@ -191,12 +193,14 @@ def log_embedding : Additive ((𝓞 K)ˣ) →+ ({w : InfinitePlace K // w ≠ w�
       Real.log_mul, mul_add]
     rfl }
 
+variable {K}
+
 @[simp]
 theorem log_embedding_component (x : (𝓞 K)ˣ) (w : {w : InfinitePlace K // w ≠ w₀}) :
-    (log_embedding x) w = mult w.val * Real.log (w.val x) := rfl
+    (log_embedding K x) w = mult w.val * Real.log (w.val x) := rfl
 
 theorem log_embedding_sum_component (x : (𝓞 K)ˣ) :
-    ∑ w, log_embedding x w = - mult (w₀ : InfinitePlace K) * Real.log (w₀ (x : K)) := by
+    ∑ w, log_embedding K x w = - mult (w₀ : InfinitePlace K) * Real.log (w₀ (x : K)) := by
   have h := congrArg Real.log (prod_eq_abs_norm (x : K))
   rw [show |(Algebra.norm ℚ) (x : K)| = 1 from isUnit_iff_norm.mp x.isUnit, Rat.cast_one,
     Real.log_one, Real.log_prod] at h
@@ -219,7 +223,7 @@ theorem mult_log_place_eq_zero {x : (𝓞 K)ˣ} {w : InfinitePlace K} :
     rw [mult]; split_ifs <;> norm_num
 
 theorem log_embedding_eq_zero_iff (x : (𝓞 K)ˣ) :
-    log_embedding x = 0 ↔ x ∈ torsion K := by
+    log_embedding K x = 0 ↔ x ∈ torsion K := by
   rw [mem_torsion]
   refine ⟨fun h w => ?_, fun h => ?_⟩
   · by_cases hw : w = w₀
@@ -232,13 +236,13 @@ theorem log_embedding_eq_zero_iff (x : (𝓞 K)ˣ) :
   · ext w
     rw [log_embedding_component, h w.val, Real.log_one, mul_zero, Pi.zero_apply]
 
-theorem log_embedding_component_le {r : ℝ} {x : (𝓞 K)ˣ} (hr : 0 ≤ r) (h : ‖log_embedding x‖ ≤ r)
-    (w : {w : InfinitePlace K // w ≠ w₀}) : |log_embedding x w| ≤ r := by
+theorem log_embedding_component_le {r : ℝ} {x : (𝓞 K)ˣ} (hr : 0 ≤ r) (h : ‖log_embedding K x‖ ≤ r)
+    (w : {w : InfinitePlace K // w ≠ w₀}) : |log_embedding K x w| ≤ r := by
   lift r to NNReal using hr
   simp_rw [Pi.norm_def, NNReal.coe_le_coe, Finset.sup_le_iff, ← NNReal.coe_le_coe] at h
   exact h w (Finset.mem_univ _)
 
-theorem log_le_of_log_embedding_le {r : ℝ} {x : (𝓞 K)ˣ} (hr : 0 ≤ r) (h : ‖log_embedding x‖ ≤ r)
+theorem log_le_of_log_embedding_le {r : ℝ} {x : (𝓞 K)ˣ} (hr : 0 ≤ r) (h : ‖log_embedding K x‖ ≤ r)
     (w : InfinitePlace K) : |Real.log (w x)| ≤ (Fintype.card (InfinitePlace K)) * r := by
   have tool : ∀ x : ℝ, 0 ≤ x → x ≤ mult w * x := fun x hx => by
       nth_rw 1 [← one_mul x]
@@ -267,7 +271,7 @@ variable (K)
 
 /-- The lattice formed by the image of the logarithmic embedding. -/
 noncomputable def unit_lattice : AddSubgroup ({w : InfinitePlace K // w ≠ w₀} → ℝ) :=
-  AddSubgroup.map log_embedding ⊤
+  AddSubgroup.map (log_embedding K) ⊤
 
 theorem unit_lattice_inter_ball_finite (r : ℝ) :
     ((unit_lattice K : Set ({ w : InfinitePlace K // w ≠ w₀} → ℝ)) ∩
@@ -278,7 +282,7 @@ theorem unit_lattice_inter_ball_finite (r : ℝ) :
     exact Set.inter_empty _
   · suffices Set.Finite {x : (𝓞 K)ˣ | IsIntegral ℤ (x : K) ∧
         ∀ (φ : K →+* ℂ), ‖φ x‖ ≤ Real.exp ((Fintype.card (InfinitePlace K)) * r)} by
-      refine (Set.Finite.image log_embedding this).subset ?_
+      refine (Set.Finite.image (log_embedding K) this).subset ?_
       rintro _ ⟨⟨x, ⟨_, rfl⟩⟩, hx⟩
       refine ⟨x, ⟨x.val.prop, (le_iff_le _ _).mp (fun w => (Real.log_le_iff_le_exp ?_).mp ?_)⟩, rfl⟩
       · exact pos_iff.mpr (ne_zero K x)
@@ -419,7 +423,7 @@ theorem unit_lattice_span_eq_top :
   -- The standard basis
   let B := Pi.basisFun ℝ {w : InfinitePlace K // w ≠ w₀}
   -- The family of units constructed above
-  let v := fun w : { w : InfinitePlace K // w ≠ w₀ } => log_embedding ((exists_unit K w).choose)
+  let v := fun w : { w : InfinitePlace K // w ≠ w₀ } => log_embedding K ((exists_unit K w).choose)
   -- To prove the result, it is enough to prove that the family `v` is linearly independent
   suffices B.det v ≠ 0 by
     rw [← isUnit_iff_ne_zero, ← is_basis_iff_det] at this
@@ -464,26 +468,173 @@ open BigOperators
 
 variable [NumberField K]
 
-#synth CommMonoid (𝓞 K)ˣ
+-- instance : CommMonoid ((𝓞 K)ˣ ⧸ (torsion K)) := CommGroup.toCommMonoid
 
-#synth AddCommMonoid (Additive (𝓞 K)ˣ)
+-- instance : AddCommGroup (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := Additive.addCommGroup
 
--- instance : Subgroup.Normal (torsion K) := sorry
+set_option maxHeartbeats 1000000 in
+set_option synthInstance.maxHeartbeats 100000 in
+def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) :=  sorry
 
-#synth CommGroup ((𝓞 K)ˣ ⧸ (torsion K))
+def fund_system₀ : Fin (rank K) → (𝓞 K)ˣ ⧸ (torsion K) :=
+  fun i => Additive.toMul (basis_mod_torsion K i)
 
--- #synth AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K)))
+def fund_system : Fin (rank K) → (𝓞 K)ˣ := fun i => Quot.out (fund_system₀ K i)
 
-instance : AddCommGroup (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := Additive.addCommGroup
 
-set_option synthInstance.maxHeartbeats 50000 in 
-#synth AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K)))
+example {G ι : Type _} [CommGroup G] [Fintype ι] (H : Subgroup G) [Subgroup.Normal H]
+  (f : ι → G) :
+  QuotientGroup.mk' H (∏ i, f i) = ∏ i, (QuotientGroup.mk' H (f i)) := by
+exact map_prod (QuotientGroup.mk' H) (fun x ↦ f x) Finset.univ
 
-instance : AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K))) :=
 
-instance : Module ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := sorry
+set_option synthInstance.maxHeartbeats 50000 in
+set_option maxHeartbeats 1000000 in
+theorem aux (x : (𝓞 K)ˣ) :
+    x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
+      ∈ torsion K := by
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+  dsimp
+  simp_rw [map_prod]
+  sorry
+--  rw [show ↑(∏ i, fund_system K i ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x)) i)
+--    = ∏ i, ↑(fund_system K i ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x)) i) by sorry]
+ -- refine Iff.mp ofMul_eq_zero ?_
 
-def Basis_additive : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by sorry
+#exit
+
+
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, Finset.coe_prod, ofMul_mul, ofMul_inv]
+
+--  have :=  (basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)
+  rw [this]
+
+  sorry
+
+#exit
+
+-- This is not the right way to do it, Basis.repr_sum_self is the right way
+theorem Basis.unique_coord {ι R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    (b : Basis ι R M) (x : M) :
+    ∃! c : ι → R, ∑ i, (c i) • (b i) = x := by
+  exact ⟨b.repr x, b.sum_repr x, fun d hd =>
+    by rw [← b.repr_sum_self d, ← b.repr_sum_self (b.repr x), b.sum_repr x, hd]⟩
+
+
+
+set_option synthInstance.maxHeartbeats 50000 in
+theorem toto2 (x : (𝓞 K)ˣ ⧸ (torsion K)) :
+    ∃! (e : Fin (rank K) → ℤ), ∏ i, (fund_system₀ K i) ^ (e i) = x :=
+  Basis.unique_coord (Basis_additive K) (Additive.ofMul x)
+
+
+#exit
+
+def fund_system : Fin (rank K) → (𝓞 K)ˣ := fun i => Quot.out (fund_system₀ K i)
+
+set_option maxHeartbeats 500000 in
+set_option synthInstance.maxHeartbeats 50000 in
+example (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : Fin (rank K) → ℤ),
+    x = ζ * ∏ i, (fund_system K i) ^ (e i) := by
+  obtain ⟨e, he⟩ := toto2 K ↑x
+  let ζ := x * (∏ i, (fund_system K i) ^ (e i))⁻¹
+  have : ζ ∈ torsion K := by sorry
+  refine ⟨⟨ζ, this⟩, ?_, ?_⟩
+  · refine ⟨e, ?_, ?_⟩
+    · dsimp only
+      simp only [_root_.inv_mul_cancel_right]
+    · intro f hf
+      have t1 : ∏ i, (fund_system₀ K i) ^ (e i) =  ∏ i, (fund_system₀ K i) ^ (f i) := sorry
+      have t2 := toto2 K (∏ i, (fund_system₀ K i) ^ (e i))
+      exact ExistsUnique.unique t2 t1 rfl
+  · dsimp only
+    intro η hη
+    dsimp
+
+#exit
+
+   -- rw [toto1, ← Basis.sum_repr (Basis_additive K) x] at hf
+   -- have := congrArg (Basis_additive K).repr hf
+    have t1 := Basis.repr_sum_self (Basis_additive K) f
+    rw [toto1, ← Basis.sum_repr (Basis_additive K) x] at hf
+    have t2 := congrArg Additive.ofMul hf
+    rw [ofMul_toMul] at t2
+    rw [← t2] at t1
+    have := Basis.repr_sum_self (Basis_additive K) ((Basis_additive K).repr (Additive.ofMul x))
+
+  --  have := Basis.repr_sum_self -- This is the solution, DO NOT DELETE!
+
+
+
+#exit
+
+
+set_option maxHeartbeats 1000000 in
+set_option synthInstance.maxHeartbeats 100000 in
+example (x : Additive (𝓞 K)ˣ) : ∃  (ζ : Additive (𝓞 K)ˣ) (e : Fin (rank K) → ℤ)
+    (_ : ζ ∈ (dirichlet.log_embedding K).ker),
+    x = ζ + ∑ i, (e i) • (fund_system K i) := by
+  let e : _ → ℤ := (Basis_additive K).repr (Quotient.mk'' x)
+  let y := ∑ i, (e i) • (fund_system K i)
+  let A := AddSubgroup.toIntSubmodule (dirichlet.log_embedding K).ker
+  have : x - y ∈ AddSubgroup.toIntSubmodule (dirichlet.log_embedding K).ker := by
+    rw [← Submodule.Quotient.mk_eq_zero]
+    rw [Submodule.Quotient.mk_sub]
+    dsimp only
+    rw [map_sum (Submodule.mkQ A)]
+
+#exit
+
+set_option maxHeartbeats 1000000 in
+set_option synthInstance.maxHeartbeats 100000 in
+example : Additive { x // x ∈ 𝓞 K }ˣ ⧸ (dirichlet.log_embedding K).ker →+
+    Additive ((𝓞 K)ˣ ⧸ (torsion K)) := by
+  refine QuotientAddGroup.lift (dirichlet.log_embedding K).ker ?_ ?_
+  · exact MonoidHom.toAdditive (QuotientGroup.mk' (torsion K))
+  · intro x hx
+    rw [AddMonoidHom.mem_ker, dirichlet.log_embedding_eq_zero_iff] at hx
+    dsimp
+    rw [ofMul_eq_zero]
+    rw [QuotientGroup.eq_one_iff]
+    exact hx
+--    suffices QuotientGroup.mk' (torsion K) x = (1 : (𝓞 K)ˣ ⧸ (torsion K)) by
+--      have := congrArg Additive.ofMul this
+--      exact?
+      sorry
+    sorry
+
+
+
+#exit
+
+set_option maxHeartbeats 500000 in
+set_option synthInstance.maxHeartbeats 50000 in
+def Basis_additive : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by
+  let f := QuotientAddGroup.quotientKerEquivRange (dirichlet.log_embedding K)
+  let e : (dirichlet.unit_lattice K) ≃+ (dirichlet.log_embedding K).range := sorry
+  let g : Additive { x // x ∈ 𝓞 K }ˣ ⧸ (dirichlet.log_embedding K).ker ≃+
+      Additive ((𝓞 K)ˣ ⧸ (torsion K)) := sorry
+  let g₀ :  Additive { x // x ∈ 𝓞 K }ˣ ⧸ (dirichlet.log_embedding K).ker →+
+      Additive ((𝓞 K)ˣ ⧸ (torsion K)) := by
+    let b : { x // x ∈ 𝓞 K }ˣ →* (𝓞 K)ˣ ⧸ (torsion K) := QuotientGroup.mk' (torsion K)
+    let a : Additive { x // x ∈ 𝓞 K }ˣ →+  Additive ((𝓞 K)ˣ ⧸ (torsion K)) := by
+      refine MonoidHom.toAdditive ?_
+      exact QuotientGroup.mk' (torsion K)
+    refine QuotientAddGroup.lift (dirichlet.log_embedding K).ker a ?_
+    intro x hx
+    rw [AddMonoidHom.mem_ker, dirichlet.log_embedding_eq_zero_iff] at hx
+    have : (Additive.toMul x) ∈ torsion K := sorry
+    rw [← QuotientGroup.eq_one_iff] at this
+
+
+    -- , ← QuotientAddGroup.eq_zero_iff] at hx
+  let k := (e.trans f.symm).trans g
+  let B : Basis (Fin (rank K)) ℤ (dirichlet.unit_lattice K) := sorry
+  refine B.map (AddEquiv.toIntLinearEquiv ?_)
+  exact k
+
+
+#exit
 
 def fund_system : (Fin (rank K)) → (𝓞 K)ˣ := fun i => Quot.out (Basis_additive K i)
 
