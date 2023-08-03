@@ -477,8 +477,6 @@ theorem eval_range {ι : Type _} [Finite ι] (b : Basis ι R M) :
 
 section
 
-open Classical
-
 variable [Finite R M] [Free R M] [Nontrivial R]
 
 instance dual_free : Free R (Dual R M) :=
@@ -1131,8 +1129,6 @@ theorem dualEquivDual_apply (φ : Module.Dual K W) :
 
 section
 
-open Classical
-
 open FiniteDimensional
 
 variable {V₁ : Type _} [AddCommGroup V₁] [Module K V₁]
@@ -1153,8 +1149,9 @@ theorem dualAnnihilator_dualAnnihilator_eq (W : Subspace K V) :
 
 -- TODO(kmill): https://github.com/leanprover-community/mathlib/pull/17521#discussion_r1083241963
 @[simp]
-theorem dual_finrank_eq : finrank K (Module.Dual K V) = finrank K V :=
-  LinearEquiv.finrank_eq (Basis.ofVectorSpace K V).toDualEquiv.symm
+theorem dual_finrank_eq : finrank K (Module.Dual K V) = finrank K V := by
+  classical
+  exact LinearEquiv.finrank_eq (Basis.ofVectorSpace K V).toDualEquiv.symm
 #align subspace.dual_finrank_eq Subspace.dual_finrank_eq
 
 /-- The quotient by the dual is isomorphic to its dual annihilator.  -/
@@ -1164,6 +1161,7 @@ noncomputable def quotDualEquivAnnihilator (W : Subspace K V) :
   LinearEquiv.quotEquivOfQuotEquiv <| LinearEquiv.trans W.quotAnnihilatorEquiv W.dualEquivDual
 #align subspace.quot_dual_equiv_annihilator Subspace.quotDualEquivAnnihilator
 
+open scoped Classical in
 /-- The quotient by a subspace is isomorphic to its dual annihilator. -/
 noncomputable def quotEquivAnnihilator (W : Subspace K V) : (V ⧸ W) ≃ₗ[K] W.dualAnnihilator :=
   let φ := (Basis.ofVectorSpace K W).toDualEquiv.trans W.dualEquivDual
@@ -1677,8 +1675,6 @@ variable (R M N)
 variable [Module.Finite R M] [Module.Finite R N] [Module.Free R M] [Module.Free R N]
 
 variable [Nontrivial R]
-
-open Classical
 
 /--
 A linear equivalence between `Dual M ⊗ Dual N` and `Dual (M ⊗ N)` when `M` and `N` are finite free
