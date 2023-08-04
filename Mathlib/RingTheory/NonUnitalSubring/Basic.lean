@@ -301,7 +301,7 @@ protected theorem sum_mem {R : Type _} [NonUnitalNonAssocRing R] (s : NonUnitalS
   sum_mem h
 
 /-- A non-unital subring of a non-unital ring inherits a non-unital ring structure -/
-def toNonUnitalRing {R : Type _} [NonUnitalRing R] (s : NonUnitalSubring R) :
+abbrev toNonUnitalRing {R : Type _} [NonUnitalRing R] (s : NonUnitalSubring R) :
     NonUnitalRing s :=
   inferInstance
 
@@ -328,7 +328,7 @@ theorem coe_eq_zero_iff {x : s} : (x : R) = 0 ↔ x = 0 := by
   simp
 
 /-- A non-unital subring of a `NonUnitalCommRing` is a `NonUnitalCommRing`. -/
-def toNonUnitalCommRing {R} [NonUnitalCommRing R] (s : NonUnitalSubring R) :
+abbrev toNonUnitalCommRing {R} [NonUnitalCommRing R] (s : NonUnitalSubring R) :
     NonUnitalCommRing s :=
   inferInstance
 
