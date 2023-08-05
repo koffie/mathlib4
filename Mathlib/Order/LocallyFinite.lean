@@ -1238,7 +1238,8 @@ end OrderIso
 
 variable [Preorder α] (p : α → Prop) [DecidablePred p]
 
-instance [LocallyFiniteOrder α] : LocallyFiniteOrder (Subtype p) where
+instance Subtype.instLocallyFiniteOrder [LocallyFiniteOrder α] :
+    LocallyFiniteOrder (Subtype p) where
   finsetIcc a b := (Icc (a : α) b).subtype p
   finsetIco a b := (Ico (a : α) b).subtype p
   finsetIoc a b := (Ioc (a : α) b).subtype p
@@ -1250,13 +1251,15 @@ instance [LocallyFiniteOrder α] : LocallyFiniteOrder (Subtype p) where
     simp_rw [Finset.mem_subtype, mem_Ioc, Subtype.coe_le_coe, Subtype.coe_lt_coe]
   finset_mem_Ioo a b x := by simp_rw [Finset.mem_subtype, mem_Ioo, Subtype.coe_lt_coe]
 
-instance [LocallyFiniteOrderTop α] : LocallyFiniteOrderTop (Subtype p) where
+instance Subtype.instLocallyFiniteOrderTop [LocallyFiniteOrderTop α] :
+    LocallyFiniteOrderTop (Subtype p) where
   finsetIci a := (Ici (a : α)).subtype p
   finsetIoi a := (Ioi (a : α)).subtype p
   finset_mem_Ici a x := by simp_rw [Finset.mem_subtype, mem_Ici, Subtype.coe_le_coe]
   finset_mem_Ioi a x := by simp_rw [Finset.mem_subtype, mem_Ioi, Subtype.coe_lt_coe]
 
-instance [LocallyFiniteOrderBot α] : LocallyFiniteOrderBot (Subtype p) where
+instance Subtype.instLocallyFiniteOrderBot [LocallyFiniteOrderBot α] :
+    LocallyFiniteOrderBot (Subtype p) where
   finsetIic a := (Iic (a : α)).subtype p
   finsetIio a := (Iio (a : α)).subtype p
   finset_mem_Iic a x := by simp_rw [Finset.mem_subtype, mem_Iic, Subtype.coe_le_coe]
@@ -1393,39 +1396,10 @@ theorem Set.finite_iff_bddBelow_bddAbove [Nonempty α] [Lattice α] [LocallyFini
 
 end Finite
 
--- As the instances below are noncomputable,
--- we make them low priority so when alternative constructions are available they are preferred.
--- Someone may like to upgrade these instances to computable ones.
+/-! We make the instances below low priority
+so when alternative constructions are available they are preferred. -/
 
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
-    LocallyFiniteOrder { x : α // x ≤ y } :=
-  LocallyFiniteOrder.ofFiniteIcc fun a b =>
-    Set.Finite.of_finite_image
-      (Set.Finite.subset (Set.finite_Icc ↑a ↑b) (Set.image_subtype_val_Icc_subset a b))
-      Set.injOn_subtype_val
-
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
-    LocallyFiniteOrder { x : α // x < y } :=
-  LocallyFiniteOrder.ofFiniteIcc fun a b =>
-    Set.Finite.of_finite_image
-      (Set.Finite.subset (Set.finite_Icc ↑a ↑b) (Set.image_subtype_val_Icc_subset a b))
-      Set.injOn_subtype_val
-
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
-    LocallyFiniteOrder { x : α // y ≤ x } :=
-  LocallyFiniteOrder.ofFiniteIcc fun a b =>
-    Set.Finite.of_finite_image
-      (Set.Finite.subset (Set.finite_Icc ↑a ↑b) (Set.image_subtype_val_Icc_subset a b))
-      Set.injOn_subtype_val
-
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
-    LocallyFiniteOrder { x : α // y < x } :=
-  LocallyFiniteOrder.ofFiniteIcc fun a b =>
-    Set.Finite.of_finite_image
-      (Set.Finite.subset (Set.finite_Icc ↑a ↑b) (Set.image_subtype_val_Icc_subset a b))
-      Set.injOn_subtype_val
-
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
+instance (priority := low) [Preorder α] [DecidableRel ((· : α) ≤ ·)] [LocallyFiniteOrder α] :
     LocallyFiniteOrderTop { x : α // x ≤ y } where
   finsetIoi a := Finset.Ioc a ⟨y, by rfl⟩
   finsetIci a := Finset.Icc a ⟨y, by rfl⟩
@@ -1436,18 +1410,18 @@ noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
     simp only [Finset.mem_Ioc, and_iff_left_iff_imp]
     exact fun _ => b.property
 
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
+instance (priority := low) [Preorder α] [DecidableRel ((· : α) < ·)] [LocallyFiniteOrder α] :
     LocallyFiniteOrderTop { x : α // x < y } where
-  finsetIoi a := Finset.preimage (Finset.Ioo a.val y) Subtype.val Set.injOn_subtype_val
-  finsetIci a := Finset.preimage (Finset.Ico a.val y) Subtype.val Set.injOn_subtype_val
+  finsetIoi a := (Finset.Ioo ↑a y).subtype _
+  finsetIci a := (Finset.Ico ↑a y).subtype _
   finset_mem_Ici a b := by
-    simp only [Finset.mem_preimage, Finset.mem_Ico, Subtype.coe_le_coe, and_iff_left_iff_imp]
+    simp only [Finset.mem_subtype, Finset.mem_Ico, Subtype.coe_le_coe, and_iff_left_iff_imp]
     exact fun _ => b.property
   finset_mem_Ioi a b := by
-    simp only [Finset.mem_preimage, Finset.mem_Ioo, Subtype.coe_lt_coe, and_iff_left_iff_imp]
+    simp only [Finset.mem_subtype, Finset.mem_Ioo, Subtype.coe_lt_coe, and_iff_left_iff_imp]
     exact fun _ => b.property
 
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
+instance (priority := low) [Preorder α] [DecidableRel ((· : α) ≤ ·)] [LocallyFiniteOrder α] :
     LocallyFiniteOrderBot { x : α // y ≤ x } where
   finsetIio a := Finset.Ico ⟨y, by rfl⟩ a
   finsetIic a := Finset.Icc ⟨y, by rfl⟩ a
@@ -1458,15 +1432,15 @@ noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
     simp only [Finset.mem_Ico, and_iff_right_iff_imp]
     exact fun _ => b.property
 
-noncomputable instance (priority := low) [Preorder α] [LocallyFiniteOrder α] :
+instance (priority := low) [Preorder α] [DecidableRel ((· : α) < ·)] [LocallyFiniteOrder α] :
     LocallyFiniteOrderBot { x : α // y < x } where
-  finsetIio a := Finset.preimage (Finset.Ioo y a.val) Subtype.val Set.injOn_subtype_val
-  finsetIic a := Finset.preimage (Finset.Ioc y a.val) Subtype.val Set.injOn_subtype_val
+  finsetIio a := (Finset.Ioo y ↑a).subtype _
+  finsetIic a := (Finset.Ioc y ↑a).subtype _
   finset_mem_Iic a b := by
-    simp only [Finset.mem_preimage, Finset.mem_Ioc, Subtype.coe_le_coe, and_iff_right_iff_imp]
+    simp only [Finset.mem_subtype, Finset.mem_Ioc, Subtype.coe_le_coe, and_iff_right_iff_imp]
     exact fun _ => b.property
   finset_mem_Iio a b := by
-    simp only [Finset.mem_preimage, Finset.mem_Ioo, Subtype.coe_lt_coe, and_iff_right_iff_imp]
+    simp only [Finset.mem_subtype, Finset.mem_Ioo, Subtype.coe_lt_coe, and_iff_right_iff_imp]
     exact fun _ => b.property
 
 instance [Preorder α] [LocallyFiniteOrderBot α] : Finite { x : α // x ≤ y } := by
