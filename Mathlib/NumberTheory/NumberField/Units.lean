@@ -7,6 +7,7 @@ import Mathlib.NumberTheory.NumberField.CanonicalEmbedding
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.Ideal.Norm
 import Mathlib.RingTheory.RootsOfUnity.Basic
+import Mathlib.sandbox
 
 #align_import number_theory.number_field.units from "leanprover-community/mathlib"@"00f91228655eecdcd3ac97a7fd8dbcb139fe990a"
 
@@ -445,151 +446,80 @@ theorem unit_lattice_rank : finrank ℤ (unit_lattice K) = rank K := by
   rw [← rank_space]
   exact Zlattice.rank ℝ ((unit_lattice_inter_ball_finite K)) (unit_lattice_span_eq_top K)
 
-def unit_lattice_basis : Basis (Fin (rank K)) ℤ (unit_lattice K) := by
-  have := unit_lattice_moduleFree K
-  have := unit_lattice_moduleFinite K
-  refine Basis.reindex (Module.Free.chooseBasis ℤ (unit_lattice K)) (Fintype.equivOfCardEq ?_)
-  rw [← FiniteDimensional.finrank_eq_card_chooseBasisIndex, unit_lattice_rank, Fintype.card_fin]
-
 end dirichlet
-
-section toMul
-
-theorem toMul_pow {α : Type _} (n : ℕ) [Monoid α] (a : Additive α) :
-    Additive.toMul (n • a) = (Additive.toMul a) ^ n := rfl
-
-theorem toMul_zpow {α : Type _} (n : ℤ) [Group α] (a : Additive α) :
-    Additive.toMul (n • a) = (Additive.toMul a) ^ n := rfl
-
-end toMul
-
-open BigOperators
 
 variable [NumberField K]
 
-set_option synthInstance.maxHeartbeats 100000 in
-instance : AddCommMonoid (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := inferInstance
-
-set_option synthInstance.maxHeartbeats 100000 in
-instance : AddCommGroup (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := inferInstance
-
-set_option synthInstance.maxHeartbeats 100000 in
-instance : Module ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := inferInstance
-
-set_option synthInstance.maxHeartbeats 100000 in
 def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by
-  refine (dirichlet.unit_lattice_basis K).map (AddEquiv.toIntLinearEquiv ?_)
-  rw [dirichlet.unit_lattice, ← AddMonoidHom.range_eq_map (dirichlet.log_embedding K)]
-  refine (QuotientAddGroup.quotientKerEquivRange (dirichlet.log_embedding K)).symm.trans ?_
-  sorry
+  let f : (dirichlet.unit_lattice K) ≃ₗ[ℤ] Additive ((𝓞 K)ˣ ⧸ (torsion K)) := by
+    refine AddEquiv.toIntLinearEquiv ?_
+    rw [dirichlet.unit_lattice, ← AddMonoidHom.range_eq_map (dirichlet.log_embedding K)]
+    refine (QuotientAddGroup.quotientKerEquivRange (dirichlet.log_embedding K)).symm.trans ?_
+    refine (QuotientAddGroup.quotientAddEquivOfEq ?_).trans
+      (QuotientAddGroup.quotientKerEquivOfSurjective
+        (MonoidHom.toAdditive (QuotientGroup.mk' (torsion K))) (fun x => ?_))
+    · ext
+      rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker, dirichlet.log_embedding_eq_zero_iff,
+        MonoidHom.toAdditive_apply_apply, ofMul_eq_zero, QuotientGroup.mk'_apply,
+        QuotientGroup.eq_one_iff]
+      rfl
+    · refine ⟨Additive.ofMul x.out', ?_⟩
+      simp only [MonoidHom.toAdditive_apply_apply, toMul_ofMul, QuotientGroup.mk'_apply,
+        QuotientGroup.out_eq']
+      rfl
+  have : Module.Free ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) :=
+      (dirichlet.unit_lattice_moduleFree K).of_equiv'  f
+  have : Module.Finite ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by
+    have := dirichlet.unit_lattice_moduleFinite K
+    exact Module.Finite.equiv f
+  have : FiniteDimensional.finrank ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) = rank K := by
+    rw [← LinearEquiv.finrank_eq f, dirichlet.unit_lattice_rank]
+  refine Basis.reindex (Module.Free.chooseBasis ℤ _) (Fintype.equivOfCardEq ?_)
+  rw [← FiniteDimensional.finrank_eq_card_chooseBasisIndex, this, Fintype.card_fin]
 
-def fund_system₀ : Fin (rank K) → (𝓞 K)ˣ ⧸ (torsion K) :=
-  fun i => Additive.toMul (basis_mod_torsion K i)
+def fund_system : Fin (rank K) → (𝓞 K)ˣ :=
+  fun i => Quotient.out' (Additive.toMul (basis_mod_torsion K i))
 
-def fund_system : Fin (rank K) → (𝓞 K)ˣ := fun i => Quot.out (fund_system₀ K i)
+open BigOperators
 
-set_option maxHeartbeats 1000000 in
-set_option synthInstance.maxHeartbeats 100000 in
--- set_option synth.maxHeartbeats 100000 in
-theorem aux0 (x : (𝓞 K)ˣ) :
-    x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
-      ∈ torsion K := by
-  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-  change QuotientGroup.mk' (torsion K) x * (QuotientGroup.mk' (torsion K) _)⁻¹  = 1
-  rw [map_prod (QuotientGroup.mk' (torsion K))]
-  simp_rw [map_zpow (QuotientGroup.mk' (torsion K))]
-  have : ∀ i, (QuotientGroup.mk' (torsion K)) (fund_system K i) = fund_system₀ K i := by
-    intro i
-    rw [fund_system]
-    exact QuotientGroup.out_eq' _
-  simp_rw [this]
-  have := (basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)
-  rw [show (QuotientGroup.mk' (torsion K)) x = Additive.toMul (Additive.ofMul ↑x) by rfl]
-  conv_lhs =>
-    congr
-    rw [← this]
-  simp_rw [fund_system₀]
-  simp_rw [toMul_sum]
-  rw [_root_.mul_inv_eq_iff_eq_mul]
-  simp_rw [one_mul]
-  rfl
-
-set_option maxHeartbeats 1000000 in
-theorem aux1 (x ζ : (𝓞 K)ˣ) (hζ : ζ ∈ torsion K) (f : Fin (rank K) → ℤ)
+theorem aux0 {x ζ : (𝓞 K)ˣ} {f : Fin (rank K) → ℤ} (hζ : ζ ∈ torsion K)
     (h : x = ζ * ∏ i, (fund_system K i) ^ (f i)) :
     f = (basis_mod_torsion K).repr (Additive.ofMul ↑x) := by
-  rw [← (basis_mod_torsion K).repr_sum_self f]
-  have t1 := congrArg ((↑) : (𝓞 K)ˣ → (𝓞 K)ˣ ⧸ (torsion K)) h
-  rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr hζ, one_mul] at t1
-  rw [show ↑(∏ i, fund_system K i ^ f i) =
-    QuotientGroup.mk' (torsion K) (∏ i, fund_system K i ^ f i) by rfl] at t1
-  rw [map_prod (QuotientGroup.mk' (torsion K))] at t1
-  have t2 := congrArg Additive.ofMul t1
-  rw [ofMul_prod] at t2
-  
+  suffices Additive.ofMul ↑x = ∑ i, (f i) • (basis_mod_torsion K i) by
+    rw [← (basis_mod_torsion K).repr_sum_self f, ← this]
+  calc
+    Additive.ofMul ↑x = ∑ i, (f i) • Additive.ofMul ↑(fund_system K i) := by
+                        rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr hζ, one_mul,
+                            QuotientGroup.mk_prod, ofMul_prod]; rfl
+                    _ = ∑ i, (f i) • (basis_mod_torsion K i)             := by
+                        simp_rw [fund_system, QuotientGroup.out_eq', ofMul_toMul]
 
-#exit
+theorem aux1 (x : (𝓞 K)ˣ) :
+    x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
+      ∈ torsion K := by
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← ofMul_eq_zero,
+    ofMul_mul, ofMul_inv]
+  rw [QuotientGroup.mk_prod, ofMul_prod]
+  simp_rw [QuotientGroup.mk_zpow, ofMul_zpow, fund_system, QuotientGroup.out_eq', ofMul_toMul]
+  rw [add_eq_zero_iff_eq_neg, neg_neg]
+  exact ((basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)).symm
 
-
-
-  have := ofMul_prod Finset.univ (fun i => (fund_system K i) ^ (f i))
-
-  rw [map_sum]
-  simp_rw [map_smul]
-
-
---  simp only [map_smul, Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, FunLike.coe_fn_eq]
-
-
-
--- For future reference to prove the existence of ζ
--- QuotientGroup.mk_out'_eq_mul
-
-
-#exit
-
-  dsimp
-  simp_rw [map_prod]
-  sorry
---  rw [show ↑(∏ i, fund_system K i ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x)) i)
---    = ∏ i, ↑(fund_system K i ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x)) i) by sorry]
- -- refine Iff.mp ofMul_eq_zero ?_
-
-#exit
-
-
-  rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, Finset.coe_prod, ofMul_mul, ofMul_inv]
-
---  have :=  (basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)
-  rw [this]
-
-  sorry
-
-#exit
-
--- This is not the right way to do it, Basis.repr_sum_self is the right way
-theorem Basis.unique_coord {ι R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
-    (b : Basis ι R M) (x : M) :
-    ∃! c : ι → R, ∑ i, (c i) • (b i) = x := by
-  exact ⟨b.repr x, b.sum_repr x, fun d hd =>
-    by rw [← b.repr_sum_self d, ← b.repr_sum_self (b.repr x), b.sum_repr x, hd]⟩
-
-
-
-set_option synthInstance.maxHeartbeats 50000 in
-theorem toto2 (x : (𝓞 K)ˣ ⧸ (torsion K)) :
-    ∃! (e : Fin (rank K) → ℤ), ∏ i, (fund_system₀ K i) ^ (e i) = x :=
-  Basis.unique_coord (Basis_additive K) (Additive.ofMul x)
-
-
-#exit
-
-def fund_system : Fin (rank K) → (𝓞 K)ˣ := fun i => Quot.out (fund_system₀ K i)
-
-set_option maxHeartbeats 500000 in
-set_option synthInstance.maxHeartbeats 50000 in
+-- set_option maxHeartbeats 500000 in
+-- set_option synthInstance.maxHeartbeats 50000 in
 example (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : Fin (rank K) → ℤ),
     x = ζ * ∏ i, (fund_system K i) ^ (e i) := by
+  let ζ := x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
+  refine ⟨⟨ζ, aux1 K x⟩, ?_, ?_⟩
+  · refine ⟨(basis_mod_torsion K).repr (Additive.ofMul ↑x), ?_, ?_⟩
+    · simp only [_root_.inv_mul_cancel_right]
+    · intro f hf
+      exact aux0 K (aux1 K x) hf
+  · rintro η ⟨f, hf1, hf2⟩
+    ext1
+    sorry
+#exit
+
+
   obtain ⟨e, he⟩ := toto2 K ↑x
   let ζ := x * (∏ i, (fund_system K i) ^ (e i))⁻¹
   have : ζ ∈ torsion K := by sorry
