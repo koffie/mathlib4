@@ -16,7 +16,8 @@ We prove results about the group `(𝓞 K)ˣ` of units of the ring of integers `
 field `K`.
 
 ## Main results
-* `isUnit_iff_norm`: an algebraic integer `x : 𝓞 K` is a unit if and only if `|norm ℚ x| = 1`
+* `isUnit_iff_norm`: an algebraic integer `x : 𝓞 K` is a unit if and only if `|norm ℚ x| = 1`.
+* `mem_torsion`: a unit `x : (𝓞 K)ˣ` is torsion iff `w x = 1` for all infinite places of `K`.
 
 ## Tags
 number field, units
@@ -45,8 +46,6 @@ variable (K : Type _) [Field K]
 
 section IsUnit
 
-attribute [local instance] NumberField.ringOfIntegersAlgebra
-
 variable {K}
 
 theorem isUnit_iff_norm [NumberField K] {x : 𝓞 K} :
@@ -56,7 +55,6 @@ theorem isUnit_iff_norm [NumberField K] {x : 𝓞 K} :
 #align is_unit_iff_norm isUnit_iff_norm
 
 end IsUnit
-
 namespace NumberField.Units
 
 section coe
@@ -66,17 +64,21 @@ theorem coe_injective : Function.Injective ((↑) : (𝓞 K)ˣ → K) :=
 
 variable {K}
 
- theorem coe_pow (x : (𝓞 K)ˣ) (n : ℕ) : (x ^ n : K) = (x : K) ^ n := by
-   rw [← SubmonoidClass.coe_pow, ← val_pow_eq_pow_val]
+theorem coe_mul (x y : (𝓞 K)ˣ) : ((x * y : (𝓞 K)ˣ) : K) = (x : K) * (y : K) := rfl
 
- theorem coe_zpow (x : (𝓞 K)ˣ) (n : ℤ) : (x ^ n : K) = (x : K) ^ n := by
-   change ((Units.coeHom K).comp (map (algebraMap (𝓞 K) K))) (x ^ n) = _
-   exact map_zpow _ x n
+theorem coe_pow (x : (𝓞 K)ˣ) (n : ℕ) : (x ^ n : K) = (x : K) ^ n := by
+  rw [← SubmonoidClass.coe_pow, ← val_pow_eq_pow_val]
 
- theorem coe_one : ((1 : (𝓞 K)ˣ) : K) = (1 : K) := rfl
+theorem coe_zpow (x : (𝓞 K)ˣ) (n : ℤ) : (x ^ n : K) = (x : K) ^ n := by
+  change ((Units.coeHom K).comp (map (algebraMap (𝓞 K) K))) (x ^ n) = _
+  exact map_zpow _ x n
 
- theorem coe_ne_zero (x : (𝓞 K)ˣ) : (x : K) ≠ 0 :=
-   Subtype.coe_injective.ne_iff.mpr (_root_.Units.ne_zero x)
+theorem coe_one : ((1 : (𝓞 K)ˣ) : K) = (1 : K) := rfl
+
+theorem coe_neg_one : ((-1 : (𝓞 K)ˣ) : K) = (-1 : K) := rfl
+
+theorem coe_ne_zero (x : (𝓞 K)ˣ) : (x : K) ≠ 0 :=
+  Subtype.coe_injective.ne_iff.mpr (_root_.Units.ne_zero x)
 
 end coe
 
@@ -94,9 +96,10 @@ theorem mem_torsion {x : (𝓞 K)ˣ} [NumberField K] :
   · refine norm_map_one_of_pow_eq_one φ.toMonoidHom (k := ⟨n, h_pos⟩) ?_
     rw [PNat.mk_coe, ← coe_pow, h_eq, coe_one]
   · obtain ⟨n, hn, hx⟩ := Embeddings.pow_eq_one_of_norm_eq_one K ℂ x.val.prop h
-    exact ⟨n, hn, by ext; rwa [coe_pow, coe_one]⟩
+    exact ⟨n, hn, by ext; rw [coe_pow, hx, coe_one]⟩
 
-instance : Nonempty (torsion K) := ⟨1⟩
+/-- Shortcut instance because Lean tends to time out before finding the general instance. -/
+instance : Nonempty (torsion K) := One.nonempty
 
 /-- The torsion subgroup is finite. -/
 instance [NumberField K] : Fintype (torsion K) := by
@@ -109,6 +112,7 @@ instance [NumberField K] : Fintype (torsion K) := by
   · rw [← h_ua]
     exact le_of_eq ((eq_iff_eq _ 1).mp ((mem_torsion K).mp h_tors) φ)
 
+set_option synthInstance.maxHeartbeats 30000 in
 /-- The torsion subgroup is cylic. -/
 instance [NumberField K] : IsCyclic (torsion K) := subgroup_units_cyclic _
 
@@ -514,5 +518,5 @@ theorem exist_unique_eq_mul_prod (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : F
     ext1; dsimp only
     nth_rewrite 1 [hf]
     rw [_root_.mul_inv_cancel_right]
-
+    
 end NumberField.Units
