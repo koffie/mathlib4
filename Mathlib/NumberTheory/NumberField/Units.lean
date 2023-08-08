@@ -449,6 +449,8 @@ end dirichlet
 
 variable [NumberField K]
 
+set_option profiler true
+
 def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by
   let f : (dirichlet.unit_lattice K) ≃ₗ[ℤ] Additive ((𝓞 K)ˣ ⧸ (torsion K)) := by
     refine AddEquiv.toIntLinearEquiv ?_
@@ -505,18 +507,17 @@ theorem aux1 (x : (𝓞 K)ˣ) :
 
 example (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : Fin (rank K) → ℤ),
     x = ζ * ∏ i, (fund_system K i) ^ (e i) := by
-  let ζ := x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
-  refine ⟨⟨ζ, aux1 K x⟩, ?_, ?_⟩
-  · refine ⟨(basis_mod_torsion K).repr (Additive.ofMul ↑x), ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
+  · exact ⟨x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹,
+      aux1 K x⟩
+  · refine ⟨((basis_mod_torsion K).repr (Additive.ofMul ↑x) : Fin (rank K) → ℤ), ?_, ?_⟩
     · simp only [_root_.inv_mul_cancel_right]
-    · intro f hf
-      exact aux0 K (aux1 K x) hf
-  · rintro η ⟨f, hf, _⟩
-    ext1
-    dsimp only
+    · exact fun _ hf => aux0 K (aux1 K x) hf
+  · rintro η ⟨_, hf, _⟩
+    have f_eq := aux0 K η.prop hf
+    simp_rw [f_eq] at hf
+    ext1; dsimp only
     nth_rewrite 1 [hf]
-    have := aux0 K η.prop hf
-    simp_rw [this]
-    rw [mul_assoc, mul_right_inv, mul_one]
+    rw [_root_.mul_inv_cancel_right]
 
 end NumberField.Units
