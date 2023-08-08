@@ -24,7 +24,7 @@ number field, units
  -/
 
 -- See: https://github.com/leanprover/lean4/issues/2220
-local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
+local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 
 open scoped NumberField
 
@@ -518,5 +518,5 @@ theorem exist_unique_eq_mul_prod (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : F
     ext1; dsimp only
     nth_rewrite 1 [hf]
     rw [_root_.mul_inv_cancel_right]
-    
+
 end NumberField.Units
