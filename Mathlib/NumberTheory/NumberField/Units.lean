@@ -29,7 +29,7 @@ open scoped NumberField
 
 noncomputable section
 
-open NumberField Units
+open NumberField Units BigOperators
 
 section Rat
 
@@ -154,7 +154,7 @@ namespace dirichlet
 -- (see ` unit_lattice_span_eq_top`); this is the main part of the proof, see the section
 -- `span_top` below for more details.
 
-open scoped Classical BigOperators
+open scoped Classical
 
 variable [NumberField K]
 
@@ -277,7 +277,7 @@ theorem unit_lattice_inter_ball_finite (r : ℝ) :
 
 section span_top
 -- To prove that the span over `ℝ` of the `unit_lattice` is equal to the full space, we construct
--- for each infinite place `w₁ ≠ w₀` an unit `u_w₁` of `K` such that, for all infinite place
+-- for each infinite place `w₁ ≠ w₀` an unit `u_w₁` of `K` such that, for all infinite places
 -- `w` such that `w ≠ w₁`, we have `Real.log w (u_w₁) < 0` (and thus `Real.log w₁ (u_w₁) > 0`).
 -- It follows then from a determinant computation (using `Matrix.det_ne_zero_of_neg`) that the
 -- image by `log_embedding` of these units is a `ℝ`-linearly independent family.
@@ -290,7 +290,7 @@ open NumberField.mixedEmbedding NNReal
 
 variable (w₁ : InfinitePlace K) {B : ℕ} (hB : minkowski_bound K < (constant_factor K) * B)
 
-/-- This result shows that there always exists a next term of the sequence. -/
+/-- This result shows that there always exists a next term in the sequence. -/
 theorem seq.next {x : 𝓞 K} (hx : x ≠ 0) :
     ∃ y : 𝓞 K, y ≠ 0 ∧ (∀ w, w ≠ w₁ → w y < w x) ∧ |Algebra.norm ℚ (y : K)| ≤ B := by
   let f : InfinitePlace K → ℝ≥0 :=
@@ -347,7 +347,7 @@ theorem seq.antitone {n m : ℕ} (h : n < m) :
           refine lt_trans ?_ (m_ih hr w hw)
           exact (seq.next K w₁ hB (seq K w₁ hB m).prop).choose_spec.2.1 w hw
 
-/-- The terms of the sequence have bounded norms. -/
+/-- The terms of the sequence have norm bounded by `B`. -/
 theorem seq.norm_bdd (n : ℕ) :
     1 ≤ Int.natAbs (Algebra.norm ℤ (seq K w₁ hB n : 𝓞 K)) ∧
       Int.natAbs (Algebra.norm ℤ (seq K w₁ hB n : 𝓞 K)) ≤ B := by
@@ -449,8 +449,6 @@ end dirichlet
 
 variable [NumberField K]
 
-set_option profiler true
-
 def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (torsion K))) := by
   let f : (dirichlet.unit_lattice K) ≃ₗ[ℤ] Additive ((𝓞 K)ˣ ⧸ (torsion K)) := by
     refine AddEquiv.toIntLinearEquiv ?_
@@ -478,12 +476,11 @@ def basis_mod_torsion : Basis (Fin (rank K)) ℤ (Additive ((𝓞 K)ˣ ⧸ (tors
   refine Basis.reindex (Module.Free.chooseBasis ℤ _) (Fintype.equivOfCardEq ?_)
   rw [← FiniteDimensional.finrank_eq_card_chooseBasisIndex, this, Fintype.card_fin]
 
+/-- A fundamental system of units of `K`. -/
 def fund_system : Fin (rank K) → (𝓞 K)ˣ :=
   fun i => Quotient.out' (Additive.toMul (basis_mod_torsion K i))
 
-open BigOperators
-
-theorem aux0 {x ζ : (𝓞 K)ˣ} {f : Fin (rank K) → ℤ} (hζ : ζ ∈ torsion K)
+theorem fun_eq_repr {x ζ : (𝓞 K)ˣ} {f : Fin (rank K) → ℤ} (hζ : ζ ∈ torsion K)
     (h : x = ζ * ∏ i, (fund_system K i) ^ (f i)) :
     f = (basis_mod_torsion K).repr (Additive.ofMul ↑x) := by
   suffices Additive.ofMul ↑x = ∑ i, (f i) • (basis_mod_torsion K i) by
@@ -495,26 +492,24 @@ theorem aux0 {x ζ : (𝓞 K)ˣ} {f : Fin (rank K) → ℤ} (hζ : ζ ∈ torsio
                     _ = ∑ i, (f i) • (basis_mod_torsion K i)             := by
                         simp_rw [fund_system, QuotientGroup.out_eq', ofMul_toMul]
 
-theorem aux1 (x : (𝓞 K)ˣ) :
-    x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
-      ∈ torsion K := by
-  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← ofMul_eq_zero,
-    ofMul_mul, ofMul_inv]
-  rw [QuotientGroup.mk_prod, ofMul_prod]
-  simp_rw [QuotientGroup.mk_zpow, ofMul_zpow, fund_system, QuotientGroup.out_eq', ofMul_toMul]
-  rw [add_eq_zero_iff_eq_neg, neg_neg]
-  exact ((basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)).symm
-
-example (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : Fin (rank K) → ℤ),
+set_option maxHeartbeats 300000 in
+/-- Any unit `x` of `𝓞 K` can be written uniquely as a root of unity times the product of powers
+of the units of the fundamental system. -/
+theorem exist_unique_eq_mul_prod (x : (𝓞 K)ˣ) : ∃! (ζ : torsion K) (e : Fin (rank K) → ℤ),
     x = ζ * ∏ i, (fund_system K i) ^ (e i) := by
-  refine ⟨?_, ?_, ?_⟩
-  · exact ⟨x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹,
-      aux1 K x⟩
+  let ζ := x * (∏ i, (fund_system K i) ^ ((basis_mod_torsion K).repr (Additive.ofMul ↑x) i))⁻¹
+  have h_tors : ζ ∈ torsion K := by
+    rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← ofMul_eq_zero,
+      ofMul_mul, ofMul_inv, QuotientGroup.mk_prod, ofMul_prod]
+    simp_rw [QuotientGroup.mk_zpow, ofMul_zpow, fund_system, QuotientGroup.out_eq', ofMul_toMul]
+    rw [add_eq_zero_iff_eq_neg, neg_neg]
+    exact ((basis_mod_torsion K).sum_repr (Additive.ofMul ↑x)).symm
+  refine ⟨⟨ζ, h_tors⟩, ?_, ?_⟩
   · refine ⟨((basis_mod_torsion K).repr (Additive.ofMul ↑x) : Fin (rank K) → ℤ), ?_, ?_⟩
     · simp only [_root_.inv_mul_cancel_right]
-    · exact fun _ hf => aux0 K (aux1 K x) hf
+    · exact fun _ hf => fun_eq_repr K h_tors hf
   · rintro η ⟨_, hf, _⟩
-    have f_eq := aux0 K η.prop hf
+    have f_eq := fun_eq_repr K η.prop hf
     simp_rw [f_eq] at hf
     ext1; dsimp only
     nth_rewrite 1 [hf]
