@@ -4,7 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Scott Morrison
 -/
 import Std.Tactic.TryThis
+<<<<<<< HEAD
 import Lean.Meta.Tactic.Util
+=======
+>>>>>>> origin/master
 import Mathlib.Util.Syntax
 
 /-!
@@ -48,13 +51,7 @@ def addRewriteSuggestion (ref : Syntax) (rules : List (Expr × Bool))
     let loc ← loc?.mapM fun loc => do `(location| at $(← delab loc):term)
     `(tactic| rw [$rules_stx,*] $(loc)?)
 
-  let mut tacMsg :=
-    let rulesMsg := MessageData.sbracket <| MessageData.joinSep
-      (rules.map fun ⟨e, symm⟩ => (if symm then "← " else "") ++ m!"{e}") ", "
-    if let some loc := loc? then
-      m!"rw {rulesMsg} at {loc}"
-    else
-      m!"rw {rulesMsg}"
+  let mut tacMsg := m!"{tac}"
   let mut extraMsg := ""
   if let some type := type? then
     tacMsg := tacMsg ++ m!"\n-- {type}"
