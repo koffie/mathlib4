@@ -1,4 +1,4 @@
-import Mathlib.Data.ListM.BestFirst
+import Mathlib.Data.MLList.BestFirst
 import Mathlib.Data.Nat.Sqrt
 
 /-!
@@ -7,7 +7,7 @@ import Mathlib.Data.Nat.Sqrt
 We check that `bestFirstSearch` can find its way around a wall.
 -/
 
-open Lean ListM Function
+open Lean MLList Function
 
 def Point := Int × Int
 deriving Repr
@@ -15,8 +15,8 @@ deriving Repr
 def wall : Point → Bool :=
   fun ⟨x, y⟩ => x ≤ 3 || y ≤ 3 || x ≥ 20 || y ≥ 20 || (x ≥ 6 && y ≥ 6)
 
-def nbhd : Point → ListM MetaM Point :=
-  fun ⟨x, y⟩ => ListM.ofList
+def nbhd : Point → MLList MetaM Point :=
+  fun ⟨x, y⟩ => MLList.ofList
       ([(x+1,y), (x-1,y), (x,y+1), (x,y-1)].filter wall)
 
 def emb : Point → Nat ×ₗ (Int ×ₗ Int)
