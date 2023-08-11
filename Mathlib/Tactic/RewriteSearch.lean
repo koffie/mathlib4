@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Kim Liesinger
 -/
 import Mathlib.Data.List.EditDistance.Estimator
-import Mathlib.Data.ListM.BestFirst
+import Mathlib.Data.MLList.BestFirst
 import Mathlib.Data.Nat.Interval
 
 /-!
@@ -153,10 +153,10 @@ def rewrite (n : SearchNode) (r : Rewrites.RewriteResult) :
 Given a pair of `DiscrTree` trees
 indexing all rewrite lemmas in the imported files and the current file,
 try rewriting the current goal in the `SearchNode` by one of them,
-returning a `ListM MetaM SearchNode`, i.e. a lazy list of next possible goals.
+returning a `MLList MetaM SearchNode`, i.e. a lazy list of next possible goals.
 -/
 def rewrites (lemmas : DiscrTree (Name × Bool × Nat) s × DiscrTree (Name × Bool × Nat) s)
-    (n : SearchNode) : ListM MetaM SearchNode :=
+    (n : SearchNode) : MLList MetaM SearchNode :=
   rewritesCore lemmas n.mctx n.goal n.type |>.filterMapM fun r => do n.rewrite r
 
 /--
@@ -164,7 +164,7 @@ Perform best first search on the graph of rewrites from the specified `SearchNod
 -/
 def search (n : SearchNode)
     (stopAtRfl := true) (stopAtDistZero := true) (maxQueued : Option Nat := none) :
-    ListM MetaM SearchNode := .squash do
+    MLList MetaM SearchNode := .squash do
   let lemmas ← rewriteLemmas.get
   -- TODO think about whether we should use `removeDuplicates := true` here (seems unhelpful)
   -- or if there are other ways we can deduplicate.
