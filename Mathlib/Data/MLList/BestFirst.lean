@@ -170,10 +170,10 @@ recording also the values in `ω` of the best current lower bounds.
 -/
 -- This is not used in the algorithms below, but can be useful for debugging.
 partial def toMLListWithPriority (q : BestFirstQueue prio ε m β maxSize) : MLList m ((α × ω) × β) :=
-  .squash do
+  .squash fun _ => do
     match ← q.popWithPriority with
     | none => pure .nil
-    | some (p, q') => pure <| MLList.cons' p q'.toMLListWithPriority
+    | some (p, q') => pure <| MLList.cons p q'.toMLListWithPriority
 
 /--
 Convert a `BestFirstQueue` to a `MLList (α × β)`, by popping off all elements.
@@ -196,7 +196,7 @@ compute its children (lazily) and put these back on the queue.
 -/
 def impl (maxSize : Option Nat) (f : α → MLList m α) (a : α) : MLList m α :=
   let init : BestFirstQueue prio ε m α maxSize := RBMap.single ⟨a, ⊥⟩ (f a)
-  cons do pure (some a, iterate go |>.runState' init)
+  cons a (iterate go |>.runState' init)
 where go : StateT (BestFirstQueue prio ε m α maxSize) m α := fun s => do
   match ← s.pop with
     | none => failure
