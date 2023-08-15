@@ -41,6 +41,8 @@ Similarly, it will not use local hypotheses to discharge side conditions during 
 
 -/
 
+set_option autoImplicit true
+
 namespace Mathlib.Tactic.RewriteSearch
 
 open Lean Meta
@@ -164,7 +166,7 @@ Perform best first search on the graph of rewrites from the specified `SearchNod
 -/
 def search (n : SearchNode)
     (stopAtRfl := true) (stopAtDistZero := true) (maxQueued : Option Nat := none) :
-    MLList MetaM SearchNode := .squash do
+    MLList MetaM SearchNode := .squash fun _ => do
   let lemmas ← rewriteLemmas.get
   -- TODO think about whether we should use `removeDuplicates := true` here (seems unhelpful)
   -- or if there are other ways we can deduplicate.

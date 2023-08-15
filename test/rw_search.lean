@@ -1,5 +1,7 @@
 import Mathlib.Tactic.RewriteSearch
 
+set_option autoImplicit true
+
 /-- info: Try this: rw [@List.length_append, Nat.add_comm] -/
 #guard_msgs in
 example (xs ys : List α) : (xs ++ ys).length = ys.length + xs.length := by
